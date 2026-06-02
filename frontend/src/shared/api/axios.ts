@@ -1,45 +1,60 @@
-import axios from 'axios';
+import axios from "axios"
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
-});
+})
 
-let accessToken = '';
+let accessToken = ""
+let refreshPromise: Promise<string> | null = null
 
 export function setAccessToken(token: string) {
-  accessToken = token;
+  accessToken = token
+}
+
+function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post<{ access_token: string }>(
+        `${import.meta.env.VITE_API_URL}/auth/refresh`,
+        {},
+        { withCredentials: true },
+      )
+      .then((res) => {
+        setAccessToken(res.data.access_token)
+        return res.data.access_token
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
 }
 
 api.interceptors.request.use((config) => {
   if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+    config.headers.Authorization = `Bearer ${accessToken}`
   }
-  return config;
-});
+  return config
+})
 
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
+      error.config._retry = true
       try {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
-        setAccessToken(data.access_token);
-        error.config.headers.Authorization = `Bearer ${data.access_token}`;
-        return api.request(error.config);
+        const token = await refreshAccessToken()
+        error.config.headers.Authorization = `Bearer ${token}`
+        return api.request(error.config)
       } catch {
-        setAccessToken('');
-        window.location.href = '/login';
-        return Promise.reject(error);
+        setAccessToken("")
+        window.location.href = "/login"
+        return Promise.reject(error)
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   },
-);
+)
 
-export default api;
+export default api
