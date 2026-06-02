@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Res, UseGuards, Req } from "@nestjs/common";
+import { Controller, Post, Body, Res, UseGuards, Req, Get } from "@nestjs/common";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshGuard } from "./guards/refresh.guard";
+import { JwtGuard } from "./guards/jwt.guard";
 
 const REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -41,6 +42,12 @@ export class AuthController {
             REFRESH_COOKIE_OPTIONS,
         );
         return { access_token: tokens.access_token };
+    }
+
+    @UseGuards(JwtGuard)
+    @Get("me")
+    me(@Req() req: Request) {
+        return req.user;
     }
 
     @UseGuards(RefreshGuard)
