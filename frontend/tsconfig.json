@@ -14,9 +14,12 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
+      "@design-system": ["src/design-system/index.ts"],
       "@design-system/*": ["src/design-system/*"],
       "@features/*": ["src/features/*"],
+      "@hooks": ["src/shared/hooks/index.ts"],
       "@hooks/*": ["src/shared/hooks/*"],
+      "@shared": ["src/shared/index.ts"],
       "@shared/*": ["src/shared/*"]
     }
   },
